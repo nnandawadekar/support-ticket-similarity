@@ -1,0 +1,21 @@
+[project]
+name = "ticket-similarity"
+version = "0.1.0"
+description = "Surface similar resolved support tickets for Solari Analytics agents"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+semantic = ["sentence-transformers>=3.0"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+ticket-similarity = "ticket_similarity.cli:main"
+
+[tool.setuptools]
+packages = ["ticket_similarity"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

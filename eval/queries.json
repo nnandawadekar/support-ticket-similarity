@@ -1,0 +1,41 @@
+{
+  "_note": "Hand-written paraphrases of historical tickets (relevant = ticket ids an agent would want to see) plus novel issues with no precedent (relevant = []). NT-* mirror starter_kit/data/new_tickets_example.json.",
+  "queries": [
+    {"id": "NT-1", "text": "Can't log in, password reset email never arrives\nA customer requested a password reset an hour ago and says the email still hasn't shown up, even after checking spam.", "relevant": ["T-1001"]},
+    {"id": "NT-2", "text": "Chart shows nothing for the revenue tab\nThe revenue tab on the main dashboard is completely empty for this customer, no bars, no error message, just white space.", "relevant": ["T-1201"]},
+    {"id": "NT-3", "text": "Getting charged twice this month\nCustomer's card statement shows two charges for what should be a single monthly subscription payment.", "relevant": ["T-1303"]},
+    {"id": "NT-4", "text": "Our data warehouse integration with Snowflake is failing\nCustomer set up a new integration to sync data into their Snowflake warehouse and it's failing with an unclear connection error. This is a newer integration type we haven't seen many tickets about yet.", "relevant": []},
+
+    {"id": "P-01", "text": "Okta sign-in sends users to an empty screen\nAfter authenticating through Okta the app just shows a white page.", "relevant": ["T-1002"]},
+    {"id": "P-02", "text": "MFA text message not arriving\nUser turned on multi-factor auth but the SMS code never comes through.", "relevant": ["T-1003"]},
+    {"id": "P-03", "text": "Locked out after typing wrong password\nUser tried their password several times and now the account is locked.", "relevant": ["T-1004"]},
+    {"id": "P-04", "text": "Keeps logging us out every few minutes\nTeam gets kicked out of the app constantly while working in dashboards.", "relevant": ["T-1005"]},
+    {"id": "P-05", "text": "HubSpot connector suddenly failing auth\nHubSpot integration worked for a long time and now returns an authentication error.", "relevant": ["T-1105"]},
+    {"id": "P-06", "text": "Same accounts showing up twice after resync\nWe re-ran the sync manually and now every account appears duplicated.", "relevant": ["T-1103"]},
+    {"id": "P-07", "text": "Salesforce numbers stale on revenue dashboard\nOpportunity data from Salesforce stopped updating a few days ago.", "relevant": ["T-1101"]},
+    {"id": "P-08", "text": "Dashboard layout broken on small laptop screen\nWidgets are stacked on top of each other on a 13 inch display.", "relevant": ["T-1202"]},
+    {"id": "P-09", "text": "Donut chart percentages total 98\nCategory breakdown segments do not add up to a hundred percent.", "relevant": ["T-1203"]},
+    {"id": "P-10", "text": "Billed for more seats than active users\nInvoice charges for 30 seats but only 22 people use the product.", "relevant": ["T-1301"]},
+    {"id": "P-11", "text": "Can't change the card on file\nUpdating the payment method in settings throws a generic error.", "relevant": ["T-1302"]},
+    {"id": "P-12", "text": "Still paying the old price after downgrading\nWe moved to a cheaper plan but the new invoice is at the previous rate.", "relevant": ["T-1304"]},
+    {"id": "P-13", "text": "CSV export is missing the most recent days\nExported transactions stop a week before today.", "relevant": ["T-1401", "T-1104"]},
+    {"id": "P-14", "text": "Monday report email no longer arriving\nThe scheduled weekly summary email stopped coming a few weeks ago.", "relevant": ["T-1403"]},
+    {"id": "P-15", "text": "Export totals differ from what the dashboard shows\nRevenue in the downloaded file doesn't match the live dashboard number.", "relevant": ["T-1404"]},
+    {"id": "P-16", "text": "Invited colleague sees no dashboards\nNew teammate can log in but their dashboard list is empty.", "relevant": ["T-1501"]},
+    {"id": "P-17", "text": "Terminated employee can still access the app\nAdmin deactivated the account but the person is still logged in.", "relevant": ["T-1502"]},
+    {"id": "P-18", "text": "Read-only user able to move widgets around\nA viewer can drag and rearrange widgets on a shared dashboard.", "relevant": ["T-1503"]},
+    {"id": "P-19", "text": "Dashboard is very slow to load for a big account\nMain dashboard takes nearly a minute before it becomes usable.", "relevant": ["T-1601", "T-1603", "T-1205"]},
+    {"id": "P-20", "text": "Getting 429 too many requests from the API\nIntegration is being rate limited even though traffic is normal.", "relevant": ["T-1702"]},
+    {"id": "P-21", "text": "Webhooks dropped under heavy traffic\nSome webhook events never reach our endpoint during busy periods.", "relevant": ["T-1701"]},
+    {"id": "P-22", "text": "Revoked API key is still accepted\nWe rotated the key but requests with the old key keep succeeding.", "relevant": ["T-1705"]},
+    {"id": "P-23", "text": "Annual billing discount missing\nSwitched to yearly billing but the 15% discount wasn't applied.", "relevant": ["T-1305"]},
+    {"id": "P-24", "text": "PDF export of a full year fails\nGenerating a big PDF report errors out after half a minute.", "relevant": ["T-1402"]},
+
+    {"id": "N-01", "text": "Mobile app crashes on Android when opening notifications\nThe Android app closes immediately when tapping a push notification.", "relevant": []},
+    {"id": "N-02", "text": "Request to translate the dashboard UI into German\nOur European team would like the interface in German.", "relevant": []},
+    {"id": "N-03", "text": "BigQuery connector setup fails with a connection error\nTrying to connect our Google BigQuery project, the wizard errors out.", "relevant": []},
+    {"id": "N-04", "text": "Need a copy of your SOC 2 report for procurement\nOur security team asked for the latest SOC 2 Type II report.", "relevant": []},
+    {"id": "N-05", "text": "Custom fonts not applied in white-labeled portal\nBrand fonts we uploaded do not appear in the embedded portal.", "relevant": []},
+    {"id": "N-06", "text": "Can we get a dedicated sandbox environment?\nWe want a separate staging instance to test configuration changes.", "relevant": []}
+  ]
+}
