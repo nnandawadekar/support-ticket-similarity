@@ -5022,7 +5022,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </g>
         <g data-graph-role="automatic-crossover" style="--step:1">
           <path data-graph-role="automatic-crossover-underlay" d="M 390 144 L 390 260" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="webhooks" data-edge-to="api" data-edge-label="POST /tickets" data-edge-key="1" data-edge-id="resolved-ingest" data-composition-points="390,144;390,260" data-composition-crossover="halo" data-composition-independent="true" d="M 390 144 L 390 260" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-edge-from="webhooks" data-edge-to="api" data-edge-label="POST /tickets (validated)" data-edge-key="1" data-edge-id="resolved-ingest" data-composition-points="390,144;390,260" data-composition-crossover="halo" data-composition-independent="true" d="M 390 144 L 390 260" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:2">
           <path data-graph-role="automatic-crossover-underlay" d="M 480 292 L 600 292" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
@@ -5093,16 +5093,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="390" y="126" class="t-muted" font-size="9" text-anchor="middle">ticket.resolved (proposed)</text>
         </g>
 
-        <g id="node-api" data-node-id="api" data-node-label="HTTP API" tabindex="0" role="button" aria-label="Focus HTTP API, server.py · ThreadingHTTPServer, ticket_similarity process · in-memory indexes" aria-pressed="false" data-node-kind="backend" data-node-sublabel="server.py · ThreadingHTTPServer" data-node-tag="/similar · /tickets · /health" data-node-context="ticket_similarity process · in-memory indexes">
-          <title>HTTP API · server.py · ThreadingHTTPServer · ticket_similarity process · in-memory indexes · /similar · /tickets · /health</title>
+        <g id="node-api" data-node-id="api" data-node-label="HTTP API" tabindex="0" role="button" aria-label="Focus HTTP API, server.py · strict JSON validation, ticket_similarity process · in-memory indexes" aria-pressed="false" data-node-kind="backend" data-node-sublabel="server.py · strict JSON validation" data-node-tag="400 on malformed input" data-node-context="ticket_similarity process · in-memory indexes">
+          <title>HTTP API · server.py · strict JSON validation · ticket_similarity process · in-memory indexes · 400 on malformed input</title>
           <rect x="300" y="260" width="180" height="64" rx="6" class="c-mask"/>
           <rect x="300" y="260" width="180" height="64" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(306 266) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="390" y="290" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">HTTP API</text>
-        <text data-detail="context" x="390" y="306" class="t-muted" font-size="9" text-anchor="middle">server.py · ThreadingHTTPServer</text>
-        <text data-detail="fine" x="390" y="316" class="t-backend" font-size="7" text-anchor="middle">/similar · /tickets · /health</text>
+        <text data-detail="context" x="390" y="306" class="t-muted" font-size="8.4" text-anchor="middle">server.py · strict JSON validation</text>
+        <text data-detail="fine" x="390" y="316" class="t-backend" font-size="7" text-anchor="middle">400 on malformed input</text>
         </g>
 
         <g id="node-history" data-node-id="history" data-node-label="tickets.json" tabindex="0" role="button" aria-label="Focus tickets.json, 40 resolved tickets, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="40 resolved tickets" data-node-context="Architecture component">
@@ -5117,8 +5117,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="730" y="126" class="t-muted" font-size="9" text-anchor="middle">40 resolved tickets</text>
         </g>
 
-        <g id="node-service" data-node-id="service" data-node-label="SimilarityService" tabindex="0" role="button" aria-label="Focus SimilarityService, service.py · RRF fusion, thresholds, verdict, ticket_similarity process · in-memory indexes" aria-pressed="false" data-node-kind="backend" data-node-sublabel="service.py · RRF fusion, thresholds, verdict" data-node-tag="strong / weak / no_match" data-node-context="ticket_similarity process · in-memory indexes">
-          <title>SimilarityService · service.py · RRF fusion, thresholds, verdict · ticket_similarity process · in-memory indexes · strong / weak / no_match</title>
+        <g id="node-service" data-node-id="service" data-node-label="SimilarityService" tabindex="0" role="button" aria-label="Focus SimilarityService, service.py · RRF fusion, thresholds, verdict, ticket_similarity process · in-memory indexes" aria-pressed="false" data-node-kind="backend" data-node-sublabel="service.py · RRF fusion, thresholds, verdict" data-node-tag="validate, then index" data-node-context="ticket_similarity process · in-memory indexes">
+          <title>SimilarityService · service.py · RRF fusion, thresholds, verdict · ticket_similarity process · in-memory indexes · validate, then index</title>
           <rect x="600" y="260" width="260" height="64" rx="6" class="c-mask"/>
           <rect x="600" y="260" width="260" height="64" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(606 266) scale(0.6875)">
@@ -5126,7 +5126,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           </g>
           <text data-node-label="" data-detail-anchor="" x="730" y="290" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">SimilarityService</text>
         <text data-detail="context" x="730" y="306" class="t-muted" font-size="9" text-anchor="middle">service.py · RRF fusion, thresholds, verdict</text>
-        <text data-detail="fine" x="730" y="316" class="t-backend" font-size="7" text-anchor="middle">strong / weak / no_match</text>
+        <text data-detail="fine" x="730" y="316" class="t-backend" font-size="7" text-anchor="middle">validate, then index</text>
         </g>
 
         <g id="node-tokenizer" data-node-id="tokenizer" data-node-label="Tokenizer" tabindex="0" role="button" aria-label="Focus Tokenizer, text.py · phrases, synonyms, stem, ticket_similarity process · in-memory indexes" aria-pressed="false" data-node-kind="backend" data-node-sublabel="text.py · phrases, synonyms, stem" data-node-context="ticket_similarity process · in-memory indexes">
@@ -5218,9 +5218,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <rect x="213.8" y="272" width="72.4" height="14" rx="3" class="c-mask"/>
           <text x="250" y="282" class="t-edge-emphasis" font-size="8" text-anchor="middle">POST /similar</text>
         </g>
-        <g data-detail="context" data-edge-from="webhooks" data-edge-to="api" data-edge-label="POST /tickets" data-edge-key="1" data-edge-id="resolved-ingest">
-          <rect x="311.6" y="195" width="72.4" height="14" rx="3" class="c-mask"/>
-          <text x="347.8" y="205" class="t-edge-dashed" font-size="8" text-anchor="middle">POST /tickets</text>
+        <g data-detail="context" data-edge-from="webhooks" data-edge-to="api" data-edge-label="POST /tickets (validated)" data-edge-key="1" data-edge-id="resolved-ingest">
+          <rect x="254" y="195" width="130" height="14" rx="3" class="c-mask"/>
+          <text x="319" y="205" class="t-edge-dashed" font-size="8" text-anchor="middle">POST /tickets (validated)</text>
         </g>
         <g data-detail="context" data-edge-from="api" data-edge-to="service" data-edge-label="search() · add()" data-edge-key="2" data-edge-id="api-to-service">
           <rect x="496.6" y="272" width="86.8" height="14" rx="3" class="c-mask"/>
@@ -5495,6 +5495,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
       <div class="card">
         <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>Input validation</h3>
+        </div>
+        <ul>
+          <li>API rejects malformed bodies with 400: non-object JSON, bad Content-Length, wrong field types, top_k outside 1–20</li>
+          <li>Each ticket is fully validated before any index is written, so a bad ticket can&#39;t shift ticket and index positions</li>
+          <li>Integer ticket IDs (as Zendesk uses) are accepted and normalised to strings; duplicates in one batch are indexed once</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
           <div class="card-dot amber"></div>
           <h3>Verdict thresholds</h3>
         </div>
@@ -5525,7 +5537,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>Helpdesk sidebar app and webhooks are the proposed integration</li>
           <li>Index is rebuilt from JSON at startup; POST /tickets is not persisted</li>
-          <li>No auth, rate limiting or PII scrubbing on the API</li>
+          <li>No auth or rate limiting on the API; PII is not scrubbed</li>
         </ul>
       </div>
     </div>

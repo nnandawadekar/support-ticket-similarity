@@ -3,7 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Support Ticket Similarity Assistant — Architecture",
-    "output": ".archify/architecture-ticket-similarity-20261015-235534/ticket-similarity.html",
+    "output": ".archify/architecture-ticket-similarity-20261018-160322/ticket-similarity.html",
     "quality_profile": "showcase"
   },
   "components": [
@@ -40,7 +40,7 @@
       "id": "api",
       "type": "backend",
       "label": "HTTP API",
-      "sublabel": "server.py · ThreadingHTTPServer",
+      "sublabel": "server.py · strict JSON validation",
       "pos": [
         300,
         260
@@ -49,7 +49,7 @@
         180,
         64
       ],
-      "tag": "/similar · /tickets · /health"
+      "tag": "400 on malformed input"
     },
     {
       "id": "history",
@@ -78,7 +78,7 @@
         260,
         64
       ],
-      "tag": "strong / weak / no_match"
+      "tag": "validate, then index"
     },
     {
       "id": "tokenizer",
@@ -208,7 +208,7 @@
       "id": "resolved-ingest",
       "from": "webhooks",
       "to": "api",
-      "label": "POST /tickets",
+      "label": "POST /tickets (validated)",
       "variant": "dashed",
       "fromSide": "bottom",
       "toSide": "top"
@@ -322,6 +322,15 @@
       ]
     },
     {
+      "dot": "rose",
+      "title": "Input validation",
+      "items": [
+        "API rejects malformed bodies with 400: non-object JSON, bad Content-Length, wrong field types, top_k outside 1–20",
+        "Each ticket is fully validated before any index is written, so a bad ticket can't shift ticket and index positions",
+        "Integer ticket IDs (as Zendesk uses) are accepted and normalised to strings; duplicates in one batch are indexed once"
+      ]
+    },
+    {
       "dot": "amber",
       "title": "Verdict thresholds",
       "items": [
@@ -345,7 +354,7 @@
       "items": [
         "Helpdesk sidebar app and webhooks are the proposed integration",
         "Index is rebuilt from JSON at startup; POST /tickets is not persisted",
-        "No auth, rate limiting or PII scrubbing on the API"
+        "No auth or rate limiting on the API; PII is not scrubbed"
       ]
     }
   ]
