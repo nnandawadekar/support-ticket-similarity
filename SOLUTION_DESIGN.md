@@ -18,14 +18,9 @@ Solari's support team takes ~150 tickets/day. Agents re-solve problems that were
 
 ## 3. Approach
 
-```
- helpdesk ticket.created ──► POST /similar ──► SimilarityService
-                                                 ├─ LexicalIndex  (BM25F, inverted index, stdlib)      ─┐
-                                                 └─ SemanticIndex (MiniLM-L6 embeddings, optional)     ─┴─► RRF fusion
-                                                                                                             │
-                                          verdict: strong / possible / no-precedent ◄── confidence ◄─────────┘
- helpdesk ticket.resolved ─► POST /tickets ──► incremental add to both indexes (no rebuild)
-```
+![Architecture: the HTTP API validates input and calls SimilarityService, which ranks with LexicalIndex (BM25F) and, in hybrid mode, SemanticIndex (MiniLM); the CLI and eval harness drive the same service](architecture.png)
+
+*Solid green: the main request path. Dashed purple: optional hybrid mode and the proposed helpdesk webhook. Orange boundary: one process with in-memory indexes. Interactive version: `architecture.html`.*
 
 **Normalisation** (`text.py`): lowercasing, contraction handling, phrase canonicalisation (`log in`/`sign-in` → `login`, `MFA`/`two-factor` → `2fa`, `times out` → `timeout`, `read-only` → `viewer`), ~15 domain synonyms, support-boilerplate stopwords (`customer`, `reports`, `noticed`…), a light suffix stemmer. 3-digit numbers are kept (`429`, `500`); other numbers are dropped.
 
