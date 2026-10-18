@@ -91,3 +91,38 @@ def test_verdict_agrees_with_returned_matches(service):
 def test_unknown_mode_rejected(history):
     with pytest.raises(ValueError):
         SimilarityService(history, mode="magic")
+
+
+@pytest.mark.parametrize("top_k", [0, -1, True])
+def test_search_rejects_invalid_top_k(service, top_k):
+    with pytest.raises(ValueError, match="top_k"):
+        service.search("dashboard slow", top_k=top_k)
+
+
+def test_constructor_rejects_invalid_top_k(history):
+    with pytest.raises(ValueError, match="top_k"):
+        SimilarityService(history, top_k=0)
+
+
+def test_add_many_deduplicates_ids_within_batch(history):
+    service = SimilarityService(history)
+    ticket = {
+        "ticket_id": "T-3001",
+        "subject": "New precedent",
+        "description": "A reproducible issue",
+        "resolution_notes": "Applied the fix.",
+    }
+    assert service.add_many([ticket, ticket]) == 1
+    assert len(service.tickets) == 41
+
+
+def test_add_rejects_unhashable_ticket_id(history):
+    service = SimilarityService(history)
+    ticket = {
+        "ticket_id": ["T-3001"],
+        "subject": "New precedent",
+        "description": "A reproducible issue",
+        "resolution_notes": "Applied the fix.",
+    }
+    with pytest.raises(ValueError, match="ticket_id"):
+        service.add(ticket)

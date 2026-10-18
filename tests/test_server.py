@@ -1,6 +1,8 @@
 import json
+import socket
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer
 
@@ -48,6 +50,25 @@ def test_similar_with_subject_and_description(base_url):
 def test_similar_validation(base_url):
     assert _call(f"{base_url}/similar", {})[0] == 400
     assert _call(f"{base_url}/similar", {"text": "chart blank", "top_k": 0})[0] == 400
+    assert _call(f"{base_url}/similar", {"text": "chart blank", "top_k": True})[0] == 400
+    assert _call(f"{base_url}/similar", {"text": 123})[0] == 400
+
+
+@pytest.mark.parametrize("payload", [[], "chart blank"])
+def test_post_rejects_non_object_json(base_url, payload):
+    assert _call(f"{base_url}/similar", payload)[0] == 400
+
+
+def test_post_rejects_negative_content_length(base_url):
+    port = urllib.parse.urlsplit(base_url).port
+    with socket.create_connection(("127.0.0.1", port), timeout=5) as conn:
+        conn.sendall(b"POST /similar HTTP/1.1\r\nHost: localhost\r\nContent-Length: -1\r\n\r\n{}")
+        conn.shutdown(socket.SHUT_WR)
+        response = b""
+        while chunk := conn.recv(4096):
+            response += chunk
+    assert b"400" in response.split(b"\r\n", 1)[0]
+    assert b"invalid Content-Length" in response
 
 
 def test_add_ticket_then_find_it(base_url):
@@ -58,6 +79,13 @@ def test_add_ticket_then_find_it(base_url):
     status, body = _call(f"{base_url}/similar", {"text": "iframe embed not loading"})
     assert body["matches"][0]["ticket_id"] == "T-2001"
     assert _call(f"{base_url}/tickets", {"ticket_id": "x"})[0] == 400
+    invalid_ticket = {
+        "ticket_id": ["T-2002"],
+        "subject": "Invalid ticket identifier",
+        "description": "This should be rejected",
+        "resolution_notes": "It must not be indexed.",
+    }
+    assert _call(f"{base_url}/tickets", invalid_ticket)[0] == 400
 
 
 def test_unknown_route(base_url):

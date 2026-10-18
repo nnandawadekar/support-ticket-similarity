@@ -1,5 +1,6 @@
 import threading
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 
 from .data import is_indexable
@@ -51,6 +52,8 @@ class SimilarityService:
     def __init__(self, tickets=(), mode="lexical", top_k=3, thresholds=None, semantic_index=None):
         if mode not in DEFAULT_THRESHOLDS:
             raise ValueError(f"unknown mode {mode!r}")
+        if type(top_k) is not int or top_k < 1:
+            raise ValueError("top_k must be a positive integer")
         self.mode = mode
         self.top_k = top_k
         self.thresholds = thresholds or DEFAULT_THRESHOLDS[mode]
@@ -66,13 +69,31 @@ class SimilarityService:
 
     def add_many(self, tickets):
         with self._lock:
-            fresh = [t for t in tickets if is_indexable(t) and t["ticket_id"] not in self._ids]
+            fresh = []
+            seen_ids = self._ids.copy()
+            for ticket in tickets:
+                if not isinstance(ticket, Mapping):
+                    raise ValueError("tickets must be objects")
+                if not is_indexable(ticket):
+                    continue
+                ticket_id = ticket.get("ticket_id")
+                if not isinstance(ticket_id, str) or not ticket_id:
+                    raise ValueError("resolved tickets must have a non-empty string ticket_id")
+                tags = ticket.get("tags")
+                if tags is not None and (
+                    not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags)
+                ):
+                    raise ValueError("ticket tags must be a list of strings")
+                if ticket_id in seen_ids:
+                    continue
+                seen_ids.add(ticket_id)
+                fresh.append(ticket)
+            if self.semantic is not None:
+                self.semantic.add_many(fresh)
             for t in fresh:
                 self.tickets.append(t)
                 self._ids.add(t["ticket_id"])
                 self.lexical.add(t)
-            if self.semantic is not None:
-                self.semantic.add_many(fresh)
             return len(fresh)
 
     def add(self, ticket):
@@ -80,7 +101,9 @@ class SimilarityService:
 
     def search(self, text, top_k=None):
         started = time.perf_counter()
-        top_k = top_k or self.top_k
+        top_k = self.top_k if top_k is None else top_k
+        if type(top_k) is not int or top_k < 1:
+            raise ValueError("top_k must be a positive integer")
         with self._lock:
             ranked = self._rank(text)
         matches = [m for m in ranked if m.confidence >= self.thresholds.weak][:top_k]
