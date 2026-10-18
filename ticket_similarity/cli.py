@@ -12,6 +12,16 @@ DEFAULT_EVAL = REPO_ROOT / "eval" / "queries.json"
 LABELS = {STRONG: "STRONG MATCH", "weak_match": "POSSIBLE MATCH", NONE: "NO CONFIDENT PRECEDENT"}
 
 
+def positive_int(value):
+    try:
+        number = int(value)
+    except ValueError:
+        number = 0
+    if number < 1:
+        raise argparse.ArgumentTypeError(f"must be a positive integer, got {value!r}")
+    return number
+
+
 def build_service(args):
     return SimilarityService(load_tickets(args.history), mode=args.mode, top_k=args.top_k)
 
@@ -76,7 +86,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="ticket_similarity", description="Surface similar resolved support tickets.")
     parser.add_argument("--history", type=Path, default=DEFAULT_HISTORY, help="historical tickets JSON")
     parser.add_argument("--mode", choices=("lexical", "hybrid"), default="lexical")
-    parser.add_argument("--top-k", type=int, default=3)
+    parser.add_argument("--top-k", type=positive_int, default=3)
     parser.add_argument("--json", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)

@@ -77,8 +77,10 @@ class SimilarityService:
                 if not is_indexable(ticket):
                     continue
                 ticket_id = ticket.get("ticket_id")
+                if type(ticket_id) is int:
+                    ticket_id = str(ticket_id)
                 if not isinstance(ticket_id, str) or not ticket_id:
-                    raise ValueError("resolved tickets must have a non-empty string ticket_id")
+                    raise ValueError("resolved tickets must have a non-empty string or integer ticket_id")
                 tags = ticket.get("tags")
                 if tags is not None and (
                     not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags)
@@ -87,7 +89,7 @@ class SimilarityService:
                 if ticket_id in seen_ids:
                     continue
                 seen_ids.add(ticket_id)
-                fresh.append(ticket)
+                fresh.append(ticket if ticket["ticket_id"] == ticket_id else {**ticket, "ticket_id": ticket_id})
             if self.semantic is not None:
                 self.semantic.add_many(fresh)
             for t in fresh:

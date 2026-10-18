@@ -126,3 +126,20 @@ def test_add_rejects_unhashable_ticket_id(history):
     }
     with pytest.raises(ValueError, match="ticket_id"):
         service.add(ticket)
+
+
+def test_integer_ticket_ids_are_accepted_as_strings(history):
+    service = SimilarityService(history)
+    ticket = {"ticket_id": 1001, "subject": "Kiosk printer offline", "description": "Receipt printer drops off the network",
+              "resolution_notes": "Pinned the printer to a static IP."}
+    assert service.add(ticket)
+    assert service.search("receipt printer offline").matches[0].ticket_id == "1001"
+    assert ticket["ticket_id"] == 1001
+    assert not service.add({**ticket, "ticket_id": "1001"})
+
+
+@pytest.mark.parametrize("bad_id", [True, 0.5, ""])
+def test_non_integer_non_string_ticket_ids_rejected(history, bad_id):
+    service = SimilarityService(history)
+    with pytest.raises(ValueError, match="ticket_id"):
+        service.add({"ticket_id": bad_id, "subject": "s", "description": "d", "resolution_notes": "r"})

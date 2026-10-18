@@ -66,8 +66,9 @@ def make_handler(service):
                 missing = [k for k in ("ticket_id", "subject", "description", "resolution_notes") if not payload.get(k)]
                 if missing:
                     return self._send(400, {"error": f"missing fields: {', '.join(missing)}"})
-                invalid = [k for k in ("ticket_id", "subject", "description", "resolution_notes")
-                           if not isinstance(payload[k], str)]
+                invalid = [k for k in ("subject", "description", "resolution_notes") if not isinstance(payload[k], str)]
+                if type(payload["ticket_id"]) not in (str, int):
+                    invalid.insert(0, "ticket_id")
                 if invalid:
                     return self._send(400, {"error": f"fields must be strings: {', '.join(invalid)}"})
                 tags = payload.get("tags")

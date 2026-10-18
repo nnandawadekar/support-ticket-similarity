@@ -86,6 +86,8 @@ def test_add_ticket_then_find_it(base_url):
         "resolution_notes": "It must not be indexed.",
     }
     assert _call(f"{base_url}/tickets", invalid_ticket)[0] == 400
+    assert _call(f"{base_url}/tickets", {**invalid_ticket, "ticket_id": True})[0] == 400
+    assert _call(f"{base_url}/tickets", {**invalid_ticket, "ticket_id": 2002})[0] == 201
 
 
 def test_unknown_route(base_url):
