@@ -143,7 +143,7 @@ Planning assumptions: up to 55k existing resolved tickets, then up to 165k addit
 
 ## Known limitations / not handled
 
-- **The eval set is mine and small.** Thresholds are calibrated on 34 queries I wrote after reading the data, so treat the metrics as a smoke test, not a benchmark.
+- **The eval set is mine and small.** Threshold policies were checked on 34 queries I wrote after reading the data, so treat the metrics as a smoke test, not a benchmark.
 - **Confidence does not establish a shared root cause.** Short lexical queries can clear the weak threshold on common words (see `test_short_queries_are_noisier_than_full_tickets`). Send subject + description for context; hybrid is an option to evaluate, not a guarantee against false matches. NT-1 remains a false acceptance in both modes.
 - **The index is in memory**, rebuilt from JSON at startup; tickets added via `POST /tickets` are lost on restart. The measurements above are for sequential lexical calls only; use the migration checkpoint in §5 of the design doc.
 - No auth, rate limiting, multi-tenancy or PII scrubbing on the HTTP API.
