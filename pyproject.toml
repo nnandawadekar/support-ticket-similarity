@@ -8,6 +8,7 @@ dependencies = []
 [project.optional-dependencies]
 semantic = ["sentence-transformers>=3.0"]
 dev = ["pytest>=8"]
+docs = ["reportlab>=4"]
 
 [project.scripts]
 ticket-similarity = "ticket_similarity.cli:main"

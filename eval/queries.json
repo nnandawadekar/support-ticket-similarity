@@ -1,7 +1,7 @@
 {
-  "_note": "Hand-written paraphrases of historical tickets (relevant = ticket ids an agent would want to see) plus novel issues with no precedent (relevant = []). NT-* mirror starter_kit/data/new_tickets_example.json.",
+  "_note": "Hand-written smoke set, used during development rather than held-out validation. relevant contains tickets whose described symptom and fix plausibly transfer; [] means no reusable resolution in the seed history. NT-* mirror the provided examples. NT-1 is deliberately negative: a reset email that never arrives is not solved by T-1001's password-case workaround after email delivery. A related weak result is a false acceptance under this stricter definition, and is reported as such.",
   "queries": [
-    {"id": "NT-1", "text": "Can't log in, password reset email never arrives\nA customer requested a password reset an hour ago and says the email still hasn't shown up, even after checking spam.", "relevant": ["T-1001"]},
+    {"id": "NT-1", "text": "Can't log in, password reset email never arrives\nA customer requested a password reset an hour ago and says the email still hasn't shown up, even after checking spam.", "relevant": []},
     {"id": "NT-2", "text": "Chart shows nothing for the revenue tab\nThe revenue tab on the main dashboard is completely empty for this customer, no bars, no error message, just white space.", "relevant": ["T-1201"]},
     {"id": "NT-3", "text": "Getting charged twice this month\nCustomer's card statement shows two charges for what should be a single monthly subscription payment.", "relevant": ["T-1303"]},
     {"id": "NT-4", "text": "Our data warehouse integration with Snowflake is failing\nCustomer set up a new integration to sync data into their Snowflake warehouse and it's failing with an unclear connection error. This is a newer integration type we haven't seen many tickets about yet.", "relevant": []},

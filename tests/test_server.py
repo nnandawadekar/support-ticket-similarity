@@ -54,6 +54,25 @@ def test_similar_validation(base_url):
     assert _call(f"{base_url}/similar", {"text": 123})[0] == 400
 
 
+@pytest.mark.parametrize("payload", [{"subject": []}, {"description": 123}, {"text": "  \n"}])
+def test_similar_rejects_malformed_ticket_text(base_url, payload):
+    assert _call(f"{base_url}/similar", payload)[0] == 400
+
+
+def test_service_validation_errors_return_400_without_indexing(base_url):
+    before = _call(f"{base_url}/health")[1]["indexed"]
+    ticket = {"ticket_id": "BAD", "subject": "subject", "description": "description",
+              "resolution_notes": "fix", "category": ["invalid"]}
+    status, body = _call(f"{base_url}/tickets", ticket)
+    assert status == 400 and "category" in body["error"]
+    assert _call(f"{base_url}/health")[1]["indexed"] == before
+
+
+def test_zero_ticket_id_is_accepted(base_url):
+    ticket = {"ticket_id": 0, "subject": "zero id", "description": "valid ticket", "resolution_notes": "fix"}
+    assert _call(f"{base_url}/tickets", ticket)[0] == 201
+
+
 @pytest.mark.parametrize("payload", [[], "chart blank"])
 def test_post_rejects_non_object_json(base_url, payload):
     assert _call(f"{base_url}/similar", payload)[0] == 400

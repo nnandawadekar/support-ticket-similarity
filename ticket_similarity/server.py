@@ -53,8 +53,11 @@ def make_handler(service):
                 text = payload.get("text")
                 if text is not None and not isinstance(text, str):
                     return self._send(400, {"error": "'text' must be a string"})
-                text = text or query_text(payload)
-                if not text:
+                try:
+                    text = text or query_text(payload)
+                except ValueError as exc:
+                    return self._send(400, {"error": str(exc)})
+                if not text.strip():
                     return self._send(400, {"error": "provide 'text' or 'subject'/'description'"})
                 top_k = payload.get("top_k")
                 if top_k is not None and (type(top_k) is not int or not 1 <= top_k <= 20):
@@ -63,7 +66,8 @@ def make_handler(service):
                 return self._send(200, {"ticket_id": payload.get("ticket_id"), **result.to_dict()})
 
             if self.path == "/tickets":
-                missing = [k for k in ("ticket_id", "subject", "description", "resolution_notes") if not payload.get(k)]
+                missing = [k for k in ("ticket_id", "subject", "description", "resolution_notes")
+                           if k not in payload or payload[k] is None or payload[k] == ""]
                 if missing:
                     return self._send(400, {"error": f"missing fields: {', '.join(missing)}"})
                 invalid = [k for k in ("subject", "description", "resolution_notes") if not isinstance(payload[k], str)]
@@ -76,7 +80,10 @@ def make_handler(service):
                     not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags)
                 ):
                     return self._send(400, {"error": "tags must be a list of strings"})
-                added = service.add(payload)
+                try:
+                    added = service.add(payload)
+                except ValueError as exc:
+                    return self._send(400, {"error": str(exc)})
                 return self._send(201 if added else 200, {"indexed": added, "total": len(service.tickets)})
 
             self._send(404, {"error": "not found"})

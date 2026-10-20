@@ -18,6 +18,9 @@ def load_tickets(path):
 
 
 def query_text(ticket):
+    for name in ("subject", "description"):
+        if name in ticket and not isinstance(ticket[name], str):
+            raise ValueError(f"ticket {name} must be a string")
     return f"{ticket.get('subject', '')}\n{ticket.get('description', '')}".strip()
 
 
@@ -27,4 +30,4 @@ def field_text(ticket, field):
 
 
 def is_indexable(ticket):
-    return ticket.get("status", "resolved") == "resolved" and bool(ticket.get("resolution_notes"))
+    return ticket.get("status", "resolved") == "resolved" and bool((ticket.get("resolution_notes") or "").strip())
