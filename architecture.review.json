@@ -1,0 +1,15 @@
+{
+  "diagram_type": "architecture",
+  "output": "/Users/sagar/Documents/Clients/NilamN/repo/FDE/case-study-1-support-ticket-similarity/architecture.html",
+  "specification_sha256": "f71694718adc0bc9c306f4de5c9629553396d7de05a39b951d1057dadb2f0287",
+  "artifact_sha256": "6db54b88eee23b81c5967865c9376b22437fb8937a01c3d7e7d9eeaebf1c59e3",
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "visual_review_scope": "2048x1320 light/dark captures and canonical PNG export inspected; no clipping or overlapping labels observed",
+  "correction_rounds": 0,
+  "png_export": {
+    "path": "architecture.png",
+    "canonical": true
+  }
+}

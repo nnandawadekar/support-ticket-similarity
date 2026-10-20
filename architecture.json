@@ -3,8 +3,13 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Support Ticket Similarity Assistant — Architecture",
-    "output": ".archify/architecture-ticket-similarity-20261018-160322/ticket-similarity.html",
-    "quality_profile": "showcase"
+    "output": "architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/nnandawadekar/support-ticket-similarity.git",
+      "revision": "682d1bb9a669f1682bf07d7c1a275026b879712f",
+      "link_mode": "local-only"
+    }
   },
   "components": [
     {
@@ -20,13 +25,20 @@
         160,
         64
       ],
-      "icon": "person"
+      "icon": "person",
+      "sources": [
+        {
+          "path": "SOLUTION_DESIGN.md",
+          "line": 49,
+          "end_line": 49
+        }
+      ]
     },
     {
       "id": "webhooks",
       "type": "external",
       "label": "Helpdesk Webhooks",
-      "sublabel": "ticket.resolved (proposed)",
+      "sublabel": "ticket.solved (proposed)",
       "pos": [
         300,
         80
@@ -34,6 +46,13 @@
       "size": [
         180,
         64
+      ],
+      "sources": [
+        {
+          "path": "SOLUTION_DESIGN.md",
+          "line": 49,
+          "end_line": 49
+        }
       ]
     },
     {
@@ -49,7 +68,14 @@
         180,
         64
       ],
-      "tag": "400 on malformed input"
+      "tag": "400 on malformed input",
+      "sources": [
+        {
+          "path": "ticket_similarity/server.py",
+          "line": 11,
+          "end_line": 87
+        }
+      ]
     },
     {
       "id": "history",
@@ -63,6 +89,13 @@
       "size": [
         180,
         64
+      ],
+      "sources": [
+        {
+          "path": "starter_kit/data/tickets.json",
+          "line": 1,
+          "end_line": 51
+        }
       ]
     },
     {
@@ -78,7 +111,14 @@
         260,
         64
       ],
-      "tag": "validate, then index"
+      "tag": "validate, then index",
+      "sources": [
+        {
+          "path": "ticket_similarity/service.py",
+          "line": 52,
+          "end_line": 175
+        }
+      ]
     },
     {
       "id": "tokenizer",
@@ -92,6 +132,13 @@
       "size": [
         180,
         64
+      ],
+      "sources": [
+        {
+          "path": "ticket_similarity/text.py",
+          "line": 1,
+          "end_line": 72
+        }
       ]
     },
     {
@@ -107,7 +154,14 @@
         180,
         64
       ],
-      "tag": "IDF coverage"
+      "tag": "IDF coverage",
+      "sources": [
+        {
+          "path": "ticket_similarity/lexical.py",
+          "line": 20,
+          "end_line": 88
+        }
+      ]
     },
     {
       "id": "cli",
@@ -121,6 +175,13 @@
       "size": [
         180,
         64
+      ],
+      "sources": [
+        {
+          "path": "ticket_similarity/cli.py",
+          "line": 21,
+          "end_line": 82
+        }
       ]
     },
     {
@@ -136,7 +197,14 @@
         180,
         64
       ],
-      "tag": "--mode hybrid"
+      "tag": "--mode hybrid",
+      "sources": [
+        {
+          "path": "ticket_similarity/semantic.py",
+          "line": 11,
+          "end_line": 47
+        }
+      ]
     },
     {
       "id": "evaluator",
@@ -150,13 +218,20 @@
       "size": [
         200,
         64
+      ],
+      "sources": [
+        {
+          "path": "ticket_similarity/evaluate.py",
+          "line": 38,
+          "end_line": 101
+        }
       ]
     },
     {
       "id": "evalset",
       "type": "database",
       "label": "eval/queries.json",
-      "sublabel": "27 precedent + 7 novel",
+      "sublabel": "26 precedent + 8 no-fix",
       "pos": [
         640,
         790
@@ -164,13 +239,20 @@
       "size": [
         180,
         64
+      ],
+      "sources": [
+        {
+          "path": "eval/queries.json",
+          "line": 1,
+          "end_line": 41
+        }
       ]
     },
     {
       "id": "model",
       "type": "external",
       "label": "all-MiniLM-L6-v2",
-      "sublabel": "Hugging Face · 384-d, CPU",
+      "sublabel": "MiniLM sentence embeddings",
       "pos": [
         970,
         790
@@ -178,6 +260,13 @@
       "size": [
         180,
         64
+      ],
+      "sources": [
+        {
+          "path": "ticket_similarity/semantic.py",
+          "line": 4,
+          "end_line": 21
+        }
       ]
     }
   ],
@@ -307,45 +396,45 @@
       "dot": "cyan",
       "title": "Request path",
       "items": [
-        "Agent opens ticket → POST /similar with subject + description",
-        "Service ranks candidates, filters at the weak threshold, returns verdict + matches + nearest",
-        "Each match carries resolution notes, matched terms and per-signal scores"
+        "Proposed sidebar sends subject + description to POST /similar",
+        "Service preserves retrieval order, filters by weak threshold, and limits to top_k",
+        "Verdict describes the first displayed match; nearest is that match, or the top raw candidate when abstaining"
       ]
     },
     {
       "dot": "emerald",
       "title": "Scoring",
       "items": [
-        "BM25F field weights: subject 3.0, tags 2.0, description 1.0, resolution 0.4",
-        "Confidence = IDF-weighted query coverage; unseen terms get max IDF",
-        "Hybrid: RRF (k=60) over both rankings; confidence = mean(coverage, cosine)"
+        "BM25F weights: subject 3.0, tags 2.0, description 1.0, resolution 0.4",
+        "Coverage is a heuristic, not a probability that the fix transfers",
+        "Hybrid: RRF (k=60); confidence averages coverage and nonnegative cosine; missing top-50 signals contribute zero"
       ]
     },
     {
       "dot": "rose",
       "title": "Input validation",
       "items": [
-        "API rejects malformed bodies with 400: non-object JSON, bad Content-Length, wrong field types, top_k outside 1–20",
-        "Each ticket is fully validated before any index is written, so a bad ticket can't shift ticket and index positions",
-        "Integer ticket IDs (as Zendesk uses) are accepted and normalised to strings; duplicates in one batch are indexed once"
+        "API rejects malformed JSON, field types and top_k outside 1-20 with status 400",
+        "Batch field validation precedes indexing; owned copies protect indexed IDs and fixes from caller mutation",
+        "Integer IDs, including zero, normalize to strings; duplicate IDs are indexed once"
       ]
     },
     {
       "dot": "amber",
       "title": "Verdict thresholds",
       "items": [
-        "lexical: strong ≥ 0.45, weak ≥ 0.20",
-        "hybrid: strong ≥ 0.55, weak ≥ 0.35",
-        "Below weak → no_match; nearest is returned but never shown as a match"
+        "Initial lexical: strong >= 0.45, weak >= 0.20; hybrid: strong >= 0.55, weak >= 0.35",
+        "Weak threshold sweep is in-sample analysis; it neither changes defaults nor calibrates strong",
+        "Both modes abstain on 7/8 no-fix queries; NT-1 remains a weak false acceptance"
       ]
     },
     {
       "dot": "violet",
       "title": "Measured scale",
       "items": [
-        "Lexical p95: 74 ms @ 55k, 232 ms @ 165k tickets (synthetic worst case)",
-        "Dense: 4.4 ms matvec @ 165k; query encode 3.8 ms on CPU",
-        "Beyond ~165k: Postgres FTS / OpenSearch + pgvector behind SimilarityService"
+        "Sequential lexical p95: 76.6 ms at 55k and 243.4 ms at 165k; synthetic data, not a guaranteed worst case",
+        "Peak traced build allocation at 165k: 1461 MB; not total RSS. Hybrid scale and burst capacity are unverified",
+        "Planning envelope: 55k backlog + 165k incoming. Migrate to persisted search before approaching 165k retained tickets"
       ]
     },
     {

@@ -17,7 +17,8 @@ class Thresholds:
     weak: float
 
 
-# Calibrated on eval/queries.json; see `python -m ticket_similarity eval --sweep`.
+# Initial policy thresholds, checked on the hand-written smoke set. The sweep
+# suggests weak thresholds only; it neither changes these nor calibrates strong.
 DEFAULT_THRESHOLDS = {
     "lexical": Thresholds(strong=0.45, weak=0.20),
     "hybrid": Thresholds(strong=0.55, weak=0.35),
@@ -74,12 +75,15 @@ class SimilarityService:
             for ticket in tickets:
                 if not isinstance(ticket, Mapping):
                     raise ValueError("tickets must be objects")
+                for name in ("subject", "description", "resolution_notes", "category", "created_at", "status"):
+                    if name in ticket and not isinstance(ticket[name], str):
+                        raise ValueError(f"ticket {name} must be a string")
                 if not is_indexable(ticket):
                     continue
                 ticket_id = ticket.get("ticket_id")
                 if type(ticket_id) is int:
                     ticket_id = str(ticket_id)
-                if not isinstance(ticket_id, str) or not ticket_id:
+                if not isinstance(ticket_id, str) or not ticket_id.strip():
                     raise ValueError("resolved tickets must have a non-empty string or integer ticket_id")
                 tags = ticket.get("tags")
                 if tags is not None and (
@@ -89,7 +93,12 @@ class SimilarityService:
                 if ticket_id in seen_ids:
                     continue
                 seen_ids.add(ticket_id)
-                fresh.append(ticket if ticket["ticket_id"] == ticket_id else {**ticket, "ticket_id": ticket_id})
+                # Own the data: later caller mutations must not change a result's
+                # fix or identifier while its index still describes the old ticket.
+                normalized = {**ticket, "ticket_id": ticket_id}
+                if tags is not None:
+                    normalized["tags"] = list(tags)
+                fresh.append(normalized)
             if self.semantic is not None:
                 self.semantic.add_many(fresh)
             for t in fresh:
@@ -103,17 +112,20 @@ class SimilarityService:
 
     def search(self, text, top_k=None):
         started = time.perf_counter()
+        if not isinstance(text, str):
+            raise ValueError("query text must be a string")
         top_k = self.top_k if top_k is None else top_k
         if type(top_k) is not int or top_k < 1:
             raise ValueError("top_k must be a positive integer")
         with self._lock:
-            ranked = self._rank(text)
+            ranked = self._rank(text) if text.strip() else []
         matches = [m for m in ranked if m.confidence >= self.thresholds.weak][:top_k]
-        nearest = max(ranked, key=lambda m: m.confidence) if ranked else None
-        best = nearest.confidence if nearest else 0.0
-        if best >= self.thresholds.strong:
+        # Preserve BM25F/RRF ordering. A hidden candidate must not upgrade the
+        # verdict for a weaker ticket actually shown to the agent.
+        nearest = matches[0] if matches else (ranked[0] if ranked else None)
+        if matches and matches[0].confidence >= self.thresholds.strong:
             verdict = STRONG
-        elif best >= self.thresholds.weak:
+        elif matches:
             verdict = WEAK
         else:
             verdict = NONE

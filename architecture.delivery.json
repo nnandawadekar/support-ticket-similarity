@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7d3c5de6-98fb-4c7b-b9e8-2f357a05cfa6",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/sagar/Documents/Clients/NilamN/repo/FDE/case-study-1-support-ticket-similarity/architecture.json",
+  "output": "/Users/sagar/Documents/Clients/NilamN/repo/FDE/case-study-1-support-ticket-similarity/architecture.html",
+  "specification": {
+    "sha256": "f71694718adc0bc9c306f4de5c9629553396d7de05a39b951d1057dadb2f0287",
+    "bytes": 10030
+  },
+  "artifact": {
+    "sha256": "6db54b88eee23b81c5967865c9376b22437fb8937a01c3d7e7d9eeaebf1c59e3",
+    "bytes": 774584
+  }
+}
