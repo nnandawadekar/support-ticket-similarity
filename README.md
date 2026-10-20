@@ -121,7 +121,7 @@ Run `python -m ticket_similarity eval --modes lexical hybrid --sweep`. This is a
 
 Initial policy thresholds (weak / strong) are lexical **0.20 / 0.45** and hybrid **0.35 / 0.55**. They were checked on this smoke set, not independently calibrated. `--sweep` searches weak thresholds from 0 to 1 in 0.01 steps, maximizes in-sample balanced accuracy, and reports a suggestion without changing defaults. On the current labels it suggests lexical 0.35 and hybrid 0.52; both would abstain on all 8 negatives but retain only 24/26 positives. Strong thresholds are policy choices, not outputs of the sweep. Collect independent labels before adjusting either tier.
 
-The evaluator distinguishes raw retrieval from displayed results, and computes strong precision from the first displayed match. It reports `n/a` if there are no strong predictions.
+The evaluator distinguishes raw retrieval from displayed results, and computes strong precision from the first displayed match. It reports `n/a` if there are no strong predictions. The sweep preserves candidate availability: empty retrievals always abstain, even at threshold zero, while a real zero-confidence candidate remains eligible at zero. It also reports counts of queries without candidates.
 
 ## Scale evidence
 
@@ -154,6 +154,12 @@ Planning assumptions: up to 55k existing resolved tickets, then up to 165k addit
 ## What I'd do next
 
 In priority order: agent feedback capture (helped / not relevant) to get real labels → helpdesk sidebar integration via webhooks → persisted index → recency and "fix shipped" handling → LLM one-line fix summary gated on `strong_match`. Details are in `SOLUTION_DESIGN.md` §6.
+
+## Postman API scenarios
+
+Import [`postman/support-ticket-similarity.postman_collection.json`](postman/support-ticket-similarity.postman_collection.json) and select the [lexical](postman/local-lexical.postman_environment.json) or [hybrid](postman/local-hybrid.postman_environment.json) environment. There are **158 requests and 843 assertions per complete run** covering the supplied examples, all seed subjects, development paraphrases, novelty, validation and incremental ingestion.
+
+Start a dedicated lexical test server with `python3 -m ticket_similarity serve --port 8002` (or hybrid on port 8001), then run the collection once in order. A full run changes the in-memory count from 40 to 45; restart the server before repeating it. Known retrieval limitations are explicitly labelled rather than counted as relevance successes. See the [import/run guide](postman/README.md), [case catalog](postman/CASES.md) and [verification receipt](postman/verification.json). The sweep regression is exercised by `python -m pytest tests/test_evaluate.py -q`; evaluation is a CLI command, not an HTTP endpoint.
 
 ## Verification and demo
 

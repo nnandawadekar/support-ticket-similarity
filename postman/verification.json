@@ -1,0 +1,36 @@
+{
+  "purpose": "API contract and regression checks; not a held-out retrieval-quality benchmark",
+  "collection": "postman/support-ticket-similarity.postman_collection.json",
+  "collection_sha256": "de102b8e1c4e6eaeeabc2467a7737a35c372b547770d68210fac322e7c772b9f",
+  "runner": "Newman 6.2.1",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "runs": {
+    "lexical": {
+      "environment": "postman/local-lexical.postman_environment.json",
+      "environment_sha256": "9c39bb64ea9866816fefab55ab35b99947dd062409f77a622cff5d4a5fc0e0b1",
+      "started_at_epoch_ms": 1792514960506,
+      "requests": 158,
+      "assertions": 843,
+      "request_failures": 0,
+      "assertion_failures": 0,
+      "script_failures": 0,
+      "all_failures": 0
+    },
+    "hybrid": {
+      "environment": "postman/local-hybrid.postman_environment.json",
+      "environment_sha256": "f1b332db415f6343946a82b9ec1c3e4264607927fa6fb48967b87d716ca9b14c",
+      "started_at_epoch_ms": 1792514982950,
+      "requests": 158,
+      "assertions": 843,
+      "request_failures": 0,
+      "assertion_failures": 0,
+      "script_failures": 0,
+      "all_failures": 0
+    }
+  },
+  "known_limitations": [
+    "NT-1: both modes return a weak related result whose fix does not transfer.",
+    "P-04: lexical abstains; hybrid recovers the session-expiry precedent."
+  ],
+  "sweep_regression": "tests/test_evaluate.py checks candidate availability, true zero scores and service/sweep parity."
+}

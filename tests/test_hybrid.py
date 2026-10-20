@@ -41,3 +41,12 @@ def test_hybrid_malformed_batch_does_not_mutate_either_index(hybrid):
 def test_hybrid_blank_query_does_not_suggest_a_fix(hybrid):
     result = hybrid.search(" \n ")
     assert result.verdict == NONE and result.matches == [] and result.nearest is None
+
+
+def test_hybrid_evaluation_preserves_blank_query_abstention(hybrid):
+    from ticket_similarity.evaluate import score_run
+
+    row = score_run(hybrid, [{"id": "blank", "text": " \n ", "relevant": []}])[0]
+    assert row["has_candidates"] is False
+    assert row["ranked"] == row["returned"] == []
+    assert row["verdict"] == NONE

@@ -39,13 +39,14 @@ def score_run(service, queries):
     rows = []
     for q in queries:
         result = service.search(q["text"], top_k=10)
-        ranked = service._rank(q["text"])
+        ranked = service._rank(q["text"]) if q["text"].strip() else []
         rows.append({
             "id": q["id"],
             "relevant": set(q["relevant"]),
             "ranked": [m.ticket_id for m in ranked[:10]],
             "returned": [m.ticket_id for m in result.matches],
             "top_conf": max((m.confidence for m in ranked), default=0.0),
+            "has_candidates": bool(ranked),
             "verdict": result.verdict,
             "latency": result.latency_ms,
         })
@@ -81,20 +82,25 @@ def sweep(rows, lo=0.0, hi=1.0, step=0.01):
     """Suggest a weak threshold; this is in-sample analysis, not calibration of strong."""
     if not all(math.isfinite(v) for v in (lo, hi, step)) or not 0 <= lo <= hi <= 1 or step <= 0:
         raise ValueError("sweep needs 0 <= lo <= hi <= 1 and a finite positive step")
-    pos = [r["top_conf"] for r in rows if r["relevant"]]
-    neg = [r["top_conf"] for r in rows if not r["relevant"]]
+    pos = [r for r in rows if r["relevant"]]
+    neg = [r for r in rows if not r["relevant"]]
     if not pos or not neg:
         raise ValueError("threshold sweep needs both precedent and novel queries")
     best = None
     for index in range(math.floor((hi - lo) / step + 1e-9) + 1):
         t = round(lo + index * step, 10)
-        tpr = sum(c >= t for c in pos) / len(pos)
-        tnr = sum(c < t for c in neg) / len(neg)
+        # An empty retrieval always abstains, even at zero. It is distinct from
+        # an available candidate whose actual confidence happens to be zero.
+        tpr = sum(r["has_candidates"] and r["top_conf"] >= t for r in pos) / len(pos)
+        tnr = sum(not r["has_candidates"] or r["top_conf"] < t for r in neg) / len(neg)
         bal = (tpr + tnr) / 2
         if best is None or bal > best[1]:
             best = (t, bal, tpr, tnr)
     return {"threshold": best[0], "balanced_accuracy": round(best[1], 3), "recall_on_precedent": round(best[2], 3), "novel_detected": round(best[3], 3),
-            "pos_conf_min": round(min(pos), 3), "neg_conf_max": round(max(neg), 3)}
+            "pos_conf_min": round(min(r["top_conf"] for r in pos), 3),
+            "neg_conf_max": round(max(r["top_conf"] for r in neg), 3),
+            "precedents_without_candidates": sum(not r["has_candidates"] for r in pos),
+            "novel_without_candidates": sum(not r["has_candidates"] for r in neg)}
 
 
 def run(tickets, queries, mode, thresholds=None):
