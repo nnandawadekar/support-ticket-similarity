@@ -1,42 +1,96 @@
 # Support Ticket Similarity Assistant
 
-Given a new support ticket, returns the most similar **resolved** tickets and how they were fixed. When nothing in the history is close enough, it says so instead of guessing. Design rationale, assumptions and trade-offs: [`SOLUTION_DESIGN.md`](SOLUTION_DESIGN.md) ([PDF](SOLUTION_DESIGN.pdf)). Interactive architecture diagram: [`architecture.html`](architecture.html) (open in a browser). The original brief: [`case-study-brief.md`](case-study-brief.md).
+**What I built:** a Python service that, given a new support ticket, returns the most similar **resolved** past tickets with their resolution notes, and says *"no confident precedent"* instead of guessing when nothing is close enough. It has a CLI and a JSON HTTP API. The default mode is BM25F lexical retrieval using only the standard library; an optional hybrid mode adds MiniLM sentence embeddings fused with RRF. An evaluation harness measures ranking and abstention.
 
-## Quickstart
+**Design document:** [`SOLUTION_DESIGN.pdf`](SOLUTION_DESIGN.pdf), with the Markdown source in [`SOLUTION_DESIGN.md`](SOLUTION_DESIGN.md). It covers the problem, assumptions, the architecture diagram (Figure 1), evidence, trade-offs and next steps.
 
-The default (lexical) mode is pure standard library, Python ≥ 3.10:
+## Requirement → file map
+
+| Requirement (from the brief) | Where it is met |
+|---|---|
+| Show similar past tickets + how they were resolved | `ticket_similarity/service.py` (`SimilarityService.search`), `ticket_similarity/lexical.py` |
+| Define what "similar" means; avoid misleading matches | `service.py` thresholds and verdicts (`strong_match` / `weak_match` / `no_match`); design §2 |
+| Text normalisation (synonyms, phrases, stemming) | `ticket_similarity/text.py` |
+| Optional AI bonus: semantic similarity | `ticket_similarity/semantic.py` + RRF fusion in `service.py` (`--mode hybrid`) |
+| End-to-end flow for a new ticket | `ticket_similarity/cli.py` (`query`, `batch`), `ticket_similarity/server.py` (`POST /similar`) |
+| Growing volume: add tickets without a rebuild | `POST /tickets` → `SimilarityService.add` (in-memory) |
+| Scale assumptions (55k → 220k tickets, p95 < 300 ms) | `scripts/benchmark.py`; results under "Scale evidence" below |
+| Evidence that it works | `ticket_similarity/evaluate.py`, `eval/queries.json`, `tests/` |
+| Assumptions, trade-offs, future work | `SOLUTION_DESIGN.pdf` §2, §5, §6; this README "Trade-offs" and "Gaps" |
+
+## Key files (read these first)
+
+1. `ticket_similarity/service.py`: the public seam: validation, ranking, RRF fusion, thresholds, verdict
+2. `ticket_similarity/lexical.py`: BM25F inverted index and IDF-coverage confidence
+3. `ticket_similarity/text.py`: tokenizer: phrase canonicalisation, synonyms, stopwords, light stemmer
+4. `ticket_similarity/semantic.py`: optional embedding index (exact cosine)
+5. `ticket_similarity/server.py`: stdlib JSON HTTP API (`/health`, `/similar`, `/tickets`)
+6. `ticket_similarity/evaluate.py`: hit@k, MRR, abstention metrics and threshold sweep
+7. `ticket_similarity/cli.py`, `ticket_similarity/data.py`: commands and data loading
+8. `tests/test_service.py`, `tests/test_lexical.py`, `tests/test_server.py`, `tests/test_evaluate.py`, `tests/test_hybrid.py`
+
+Supporting files: `tests/test_text.py`, `tests/test_cli.py`, `scripts/benchmark.py`, `eval/queries.json` (34 labelled dev queries), `starter_kit/data/*.json` (the provided seed data, needed to run).
+
+## Key assumptions (details and rationale: design §2)
+
+- **"Similar"** means a comparable symptom with a plausibly reusable fix, not merely the same category. Only resolved tickets with resolution notes are searched.
+- **History volume:** about 55k tickets (one year at 150/day), growing by up to 165k next year (3x volume), so about 220k in total. These are planning assumptions to confirm with the customer.
+- **Response time:** p95 under 300 ms, so suggestions appear when the ticket opens.
+- **Precision over recall:** no match is a valid answer. The supplied Snowflake ticket (NT-4), which has no real precedent, returns `NO CONFIDENT PRECEDENT` and is routed to triage.
+- English text, no attachments, a single trusted process (no auth yet).
+
+## How to run
+
+Python ≥ 3.10. Lexical mode has no dependencies. Run from the repository root:
 
 ```bash
-python3 -m ticket_similarity batch                       # runs starter_kit/data/new_tickets_example.json
+python3 -m ticket_similarity batch                         # the supplied new_tickets_example.json
 python3 -m ticket_similarity query "charged twice on my card this month"
-python3 -m ticket_similarity eval --sweep                # retrieval + abstention metrics
+python3 -m ticket_similarity eval --sweep                  # retrieval + abstention metrics
+python3 -m ticket_similarity serve --port 8000             # then:
+curl -s localhost:8000/similar -d '{"subject":"Chart shows nothing","description":"empty, no bars"}'
 ```
 
-Hybrid mode (BM25F + sentence embeddings) and tests:
+Hybrid mode: `pip install -r requirements-semantic.txt`, then add `--mode hybrid` (the first run downloads MiniLM, about 90 MB).
+
+## How to test
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-semantic.txt pytest
-python -m ticket_similarity --mode hybrid batch            # first hybrid use downloads MiniLM (~90 MB)
-python -m ticket_similarity eval --modes lexical hybrid --sweep
-python -m pytest -q                                      # hybrid tests auto-skip if sentence-transformers is absent
+python3 -m pip install pytest
+python3 -m pytest -q          # hybrid tests auto-skip if sentence-transformers is absent
 ```
 
-Example output:
+Last verified 2026-11-09: **94 passed**, with hybrid tests running against a cached MiniLM model.
 
-```
-NT-3: Getting charged twice this month
-  STRONG MATCH  (lexical, 0.1ms)
-  [0.75] T-1303 (billing, 2025-10-28) Charged twice for the same billing cycle
-      fix: A retry mechanism for a previously failed payment double-charged after the original
-           payment actually succeeded on the processor's side. Refunded the duplicate charge and
-           added idempotency keys to the retry logic.
-      matched: charg, twic, card, statement, two, singl, monthly, payment
+Development-set results (34 hand-written queries, **not** a held-out benchmark): both modes rank the right precedent first for 26/26. After thresholds, lexical shows it for 25/26 and hybrid for 26/26. Both abstain correctly on 7/8 no-fix queries.
 
-NT-4: Our data warehouse integration with Snowflake is failing
-  NO CONFIDENT PRECEDENT  (lexical, 0.29ms)
-  closest was T-1102 (Sync job stuck at 'in progress' for 2 days) at 0.15; treat as a new issue and route to triage
-```
+## Trade-offs
+
+- **Lexical first, embeddings optional, no LLM.** BM25F is explainable, dependency-free and fast. Hybrid helps vocabulary mismatch but adds a model and still makes false matches. An LLM is not needed for retrieval.
+- **Precision over recall.** Weak or unrelated matches are hidden (`no_match`), because a misleading precedent is worse than none. Some useful weak precedents are lost as a result.
+- **In-memory index, rebuilt from JSON.** It keeps scope small, but `POST /tickets` additions are lost on restart. Persisted search (e.g. OpenSearch + vector store) is the planned step before about 165k tickets.
+- **Replaced the starter `ticket_utils.py` overlap scorer.** It has no field weighting or abstention, so it cannot say "no match". The provided data is used unchanged.
+- **Exact search, not ANN.** It is simple and correct at prototype scale. ANN would only be chosen after benchmarking real histories.
+
+## Gaps and known limitations
+
+- The eval set is small and written by me: the thresholds are smoke-tested, not calibrated. NT-1 (undelivered reset email) is still falsely accepted as a weak match in both modes.
+- Confidence is a heuristic, not a probability. Short queries are noisier (`test_short_queries_are_noisier_than_full_tickets`).
+- No persistence, auth, rate limiting, multi-tenancy or PII scrubbing. English only; simple suffix stemmer; no recency weighting.
+- Scale numbers are for sequential lexical calls on synthetic data. Hybrid scale and concurrent load are not measured.
+- Not built: helpdesk sidebar/webhook integration, agent feedback capture, LLM fix summary (see design §6).
+
+## What I'd do next (priority order)
+
+1. Capture agent feedback ("helped" / "not relevant") to get real labels and a held-out set, then recalibrate thresholds.
+2. Integrate with the helpdesk sidebar via webhooks (`POST /similar` on ticket created, `POST /tickets` on ticket solved).
+3. Persist the index (e.g. OpenSearch + vector store), and add auth, PII controls and tenant isolation.
+4. Handle recency and "fix shipped" freshness, and group duplicates.
+5. Optional LLM one-line fix summary, shown only on `strong_match` and always reviewed by an agent.
+
+---
+
+# Reference details
 
 ## CLI
 
@@ -88,23 +142,6 @@ Confidence is a heuristic, not a probability that the fix applies. A weak match 
 
 All indexed text fields must be strings; tags must be a list of strings (or omitted/null). Integer IDs, including zero, are normalized to strings. Malformed ticket batches are rejected before indexing; tickets without a status are treated as resolved, so a real helpdesk importer must map its statuses. Unresolved tickets and blank resolution notes are not indexed. The API returns validation errors as JSON with status 400.
 
-## Layout
-
-```
-ticket_similarity/
-  text.py       tokenizer: phrase canonicalisation, synonyms, stopwords, light stemmer
-  lexical.py    BM25F inverted index + IDF-coverage confidence
-  semantic.py   optional sentence-transformers index (exact cosine)
-  service.py    fusion (RRF), thresholds, verdicts, incremental adds; the one public seam
-  server.py     stdlib ThreadingHTTPServer JSON API
-  evaluate.py   hit@k / MRR / abstention metrics + threshold sweep
-  cli.py
-eval/queries.json        34 development queries (26 precedents, 8 without a reusable fix)
-scripts/benchmark.py     synthetic scale test (10k / 55k / 165k tickets)
-tests/                   pytest suite (tokenizer, index, service, HTTP, hybrid)
-starter_kit/             provided data + starter utility (unchanged)
-```
-
 ## Current results
 
 Run `python -m ticket_similarity eval --modes lexical hybrid --sweep`. This is a hand-written development smoke set, used during implementation, **not a held-out benchmark**.
@@ -141,21 +178,7 @@ Build time includes synthetic corpus generation and index construction under `tr
 
 Planning assumptions: up to 55k existing resolved tickets, then up to 165k additional tickets over a year at 3x today's daily volume, about 220k total. Move to persisted search **before approaching 165k retained tickets**, and load-test the actual hardware and burst workload against the p95 < 300 ms service target. The table is an experiment, not a production capacity guarantee.
 
-## Known limitations / not handled
-
-- **The eval set is mine and small.** Threshold policies were checked on 34 queries I wrote after reading the data, so treat the metrics as a smoke test, not a benchmark.
-- **Confidence does not establish a shared root cause.** Short lexical queries can clear the weak threshold on common words (see `test_short_queries_are_noisier_than_full_tickets`). Send subject + description for context; hybrid is an option to evaluate, not a guarantee against false matches. NT-1 remains a false acceptance in both modes.
-- **The index is in memory**, rebuilt from JSON at startup; tickets added via `POST /tickets` are lost on restart. The measurements above are for sequential lexical calls only; use the migration checkpoint in §5 of the design doc.
-- No auth, rate limiting, multi-tenancy or PII scrubbing on the HTTP API.
-- English only. The stemmer is a deliberately simple suffix stripper, not Porter/Snowball.
-- No recency weighting: an old workaround for a since-fixed bug ranks the same as a current fix.
-- The hybrid model is downloaded from Hugging Face on first use. Set `TICKET_SIM_MODEL` to point at a local path for offline or air-gapped deploys.
-
-## What I'd do next
-
-In priority order: agent feedback capture (helped / not relevant) to get real labels → helpdesk sidebar integration via webhooks → persisted index → recency and "fix shipped" handling → LLM one-line fix summary gated on `strong_match`. Details are in `SOLUTION_DESIGN.md` §6.
-
-## Postman API scenarios
+## Postman API scenarios (repository only; not in the submission ZIP)
 
 Import [`postman/support-ticket-similarity.postman_collection.json`](postman/support-ticket-similarity.postman_collection.json) and select the [lexical](postman/local-lexical.postman_environment.json) or [hybrid](postman/local-hybrid.postman_environment.json) environment. There are **158 requests and 843 assertions per complete run** covering the supplied examples, all seed subjects, development paraphrases, novelty, validation and incremental ingestion.
 
@@ -176,11 +199,12 @@ Run from the repository root. The offline flags prevent Hugging Face metadata/ne
 
 For the panel demo: show NT-2/NT-3 and their resolutions, NT-4 abstention, then NT-1 as a weak related result whose fix does not transfer. Show `eval --sweep` and explain the precision/recall trade-off and the limits of development labels. The implementation and design make no claim that suggested resolutions are automatically safe to apply.
 
-Rebuild the two-page PDF from its Markdown source after editing it:
+Rebuild the design PDF (text plus the embedded architecture figure) from `SOLUTION_DESIGN.md` after editing it, then build the submission ZIP:
 
 ```bash
 python -m pip install '.[docs]'
 python scripts/render_design.py
+python scripts/package_submission.py      # writes dist/support-ticket-similarity-submission.zip
 ```
 
-The architecture source is `architecture.json`; its interactive and PNG exports accompany the design.
+The diagram source is `architecture.json`. Its PNG export is embedded in the PDF as a raster picture. The PNG/HTML exports, Postman assets and authoring scripts stay in the repository and are left out of the ZIP.
