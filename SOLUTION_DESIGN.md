@@ -1,10 +1,10 @@
 # Solution Design - Support Ticket Similarity Assistant
 
-## 1. Problem
+## 1. Problem, restated
 
 Solari receives about 150 support tickets a day. Agents need a few past tickets with reusable resolutions to reduce repeated investigation and inconsistent advice. The assistant retrieves evidence for an agent to review; it does not diagnose the new issue or apply a fix automatically.
 
-## 2. Assumptions and rationale
+## 2. Assumptions made, and why
 
 | Assumption | Rationale / consequence |
 |---|---|
@@ -15,7 +15,7 @@ Solari receives about 150 support tickets a day. Agents need a few past tickets 
 | English text, no attachments; one trusted local process. | Fits the supplied data and time box. Authentication, tenant isolation and PII controls precede deployment. |
 | Precision matters more than recall; agents decide whether a past fix applies. | A misleading precedent can reinforce inconsistent advice. No-match is a valid outcome. |
 
-## 3. Implemented approach
+## 3. Proposed approach and architecture
 
 `CLI / HTTP API -> SimilarityService -> BM25F index [+ optional semantic index] -> verdict, matches, resolution notes`
 
@@ -27,7 +27,8 @@ Optional hybrid mode embeds subject, description and tags with local MiniLM and 
 
 Matches retain retrieval order and must clear the weak threshold. The verdict describes the first displayed match, so a hidden candidate cannot upgrade it. `nearest` is that first match, or the top raw candidate when abstaining. Initial weak/strong thresholds are lexical 0.20/0.45 and hybrid 0.35/0.55. The sweep suggests weak thresholds only and never applies them automatically.
 
-Architecture details: [interactive diagram](architecture.html).
+![Figure 1 - Architecture. An agent sidebar (proposed) calls POST /similar on the HTTP API (server.py), which validates input and calls SimilarityService (service.py). The service queries LexicalIndex (lexical.py, BM25F top-50, using the text.py tokenizer) and, in hybrid mode, SemanticIndex (semantic.py, exact cosine top-50 over all-MiniLM-L6-v2 embeddings), fuses them with RRF and applies thresholds to produce the verdict. History loads from tickets.json; resolved tickets can be added via POST /tickets (helpdesk webhook, proposed). The CLI (cli.py) runs query/batch/serve/eval; the eval harness (evaluate.py) replays eval/queries.json through the service.](architecture.png)
+<!-- Figure 1 is embedded as a picture in SOLUTION_DESIGN.pdf; architecture.png is its export and is kept in the repository only. -->
 
 ## 4. Evidence and limits
 
@@ -37,13 +38,13 @@ These are hand-written development labels, not held-out evidence. Hybrid recover
 
 The reproducible lexical benchmark and recorded environment are in the README. It measures single-request service calls on recombined seed text, with peak traced Python allocations during build. It does not establish a production worst case, concurrent capacity or hybrid scale performance. Treat 165k as a migration checkpoint, not a supported production capacity guarantee.
 
-## 5. Trade-offs
+## 5. Trade-offs considered, and why I chose what I chose
 
 - **Lexical vs embeddings vs LLM:** lexical is portable and explainable; hybrid helps vocabulary mismatch but adds model cost and still makes false matches. Ship the lexical prototype; trial hybrid after independent validation. An LLM is unnecessary for the required retrieval flow.
 - **Exact vs approximate search:** exact cosine is simplest for this prototype. Benchmark realistic histories before choosing ANN; no million-vector latency guarantee is claimed.
 - **Memory vs persistence:** rebuild-from-JSON keeps scope small, but loses incremental additions on restart. Before the planning envelope, move retrieval behind the service seam to persisted search, such as OpenSearch plus a vector store. Postgres FTS is another lexical option, not a drop-in BM25F equivalent.
 - **Abstention vs always returning results:** filtering reduces misleading advice but hides useful weak precedents. Coverage thresholds and hand-maintained synonyms can overfit this tiny dataset. The starter overlap helper lacks weighting and abstention, so it was replaced.
 
-## 6. More time, data or budget
+## 6. What I would do differently with more time, data or budget
 
 First collect agent relevance feedback and a held-out set, including similar symptoms with different causes; measure handle time and answer consistency against a control queue. Next build the helpdesk sidebar/webhooks, persisted ingestion, authentication, PII controls and tenant isolation. Then add freshness/fix-version handling, duplicate grouping and burst-load tests. Consider reranking or a cited one-line LLM summary only after retrieval quality is established, with agent review retained.
